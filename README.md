@@ -79,7 +79,7 @@ Every boss fight draws three mechanics from a pool of 30, using a difficulty bud
 Requirements: Python 3.10 or newer, Node.js 20 or newer with npm, and ffmpeg (only needed to regenerate music).
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/rhythm-runner.git
+git clone https://github.com/Mladen642/rhythm-runner.git
 cd rhythm-runner
 python3 -m pip install -r tools/requirements.txt
 ```
