@@ -23,18 +23,6 @@ chmod +x RhythmRunner-*-x86_64.AppImage
 If it complains about FUSE, install `libfuse2` (`libfuse2t64` on Ubuntu 24.04 and later) or run it with `--appimage-extract-and-run`.
 The game starts in fullscreen; F11 or Alt+Enter toggles it.
 
-**In a browser**
-
-Unzip `rhythm-runner-web-*.zip`, start a local web server in that folder and open it:
-
-```bash
-cd rhythm-runner-web
-python3 -m http.server 8000
-# then open http://localhost:8000
-```
-
-Opening `index.html` straight from disk does not work, because the game loads its chapter data and music with `fetch()`.
-
 ## How to play
 
 | Key | Action |
