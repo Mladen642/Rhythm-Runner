@@ -1,0 +1,9 @@
+# Desktop packaging
+desktop/node_modules/
+desktop/dist/
+
+# Rendered audio and scratch output from the content pipeline in tools/
+tools/*.wav
+tools/*.mp3
+tools/check.js
+__pycache__/

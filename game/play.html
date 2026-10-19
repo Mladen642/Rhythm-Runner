@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rhythm Runner</title>
+<style>
+:root {
+  --bg: #efe9f7; --ink: #2a1f3a; --muted: #5f5578; --focus: #c8327f;
+  color-scheme: light; box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #07040e; --ink: #e9e4ff; --muted: #9a92bd; --focus: #ff4fa3; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #07040e; --ink: #e9e4ff; --muted: #9a92bd; --focus: #ff4fa3; color-scheme: dark; }
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; overflow: hidden; }
+canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; background: #000; touch-action: none; outline: none; max-width: 100%; }
+canvas:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.hint { margin: 0; font-size: 13px; line-height: 1.4; color: var(--muted); text-align: center; max-width: 64ch; padding: 0 12px; }
+</style>
+<style id="app-fullscreen">
+  html, body { background: #000 !important; margin: 0; overflow: hidden; }
+  body { gap: 0 !important; padding: 0 !important; justify-content: center; align-items: center; }
+  :root { padding: 0 !important; }
+  #hint { display: none !important; }
+  canvas { box-shadow: none !important; border-radius: 0 !important; flex-shrink: 0; max-width: none !important; }
+</style>
+</head>
+<body>
+<canvas id="c" width="320" height="180" tabindex="0"
+  aria-label="Rhythm runner chapter. W, E and R hit high, middle and ground enemies at the targets in front of the hero, Space hits all three at once, B calls the buddy, P pauses."></canvas>
+<p class="hint" id="hint">Click the game and turn the sound on. W E R hit the lanes, Space hits all three, B calls your buddy, P pauses, Q kicks your rival back. On the map: C outfit, J jukebox, S story.</p>
+<script>
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && typeof state !== 'undefined' && state === 'map') { e.stopImmediatePropagation(); location.href = 'index.html'; } }, true);
+(async () => {
+  const ch = new URLSearchParams(location.search).get('ch') || '1';
+  const d = await (await fetch('data/ch' + ch + '.json')).json();
+  window.__DATA = d.data; window.__SONGS = d.songs; window.__LOOPS = d.loops;
+  document.title = 'Rhythm Runner: Chapter ' + ch;
+  const ms = document.createElement('script'); ms.src = 'lib/mespeak.js';
+  ms.onload = ms.onerror = () => { const s = document.createElement('script'); s.src = 'engine.js'; document.body.appendChild(s); };
+  document.body.appendChild(ms);
+})();
+</script>
+</body>
+</html>

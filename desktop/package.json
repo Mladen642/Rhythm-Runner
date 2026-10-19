@@ -1,11 +1,11 @@
 {
   "name": "rhythm-runner",
   "productName": "Rhythm Runner",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A pixel-art rhythm runner: twelve chapters, twelve genres, one groove.",
-  "author": { "name": "YOUR NAME", "email": "you@example.com" },
-  "homepage": "https://github.com/YOUR-USERNAME/rhythm-runner",
-  "repository": { "type": "git", "url": "https://github.com/YOUR-USERNAME/rhythm-runner.git" },
+  "author": "Mladen Babić",
+  "homepage": "https://github.com/Mladen642/Rhythm-Runner",
+  "repository": { "type": "git", "url": "https://github.com/Mladen642/Rhythm-Runner.git" },
   "license": "GPL-3.0-or-later",
   "main": "main.js",
   "scripts": {
@@ -15,7 +15,7 @@
   "build": {
     "appId": "io.github.rhythm-runner",
     "productName": "Rhythm Runner",
-    "files": ["main.js", { "from": "../build/web", "to": "web" }],
+    "files": ["main.js", "build/icon.png", { "from": "../game", "to": "web" }],
     "asar": false,
     "directories": { "output": "dist", "buildResources": "build" },
     "linux": {

@@ -1,5 +1,5 @@
 // Rhythm Runner desktop shell.
-// Serves the web build through an app:// protocol (so fetch() works for chapter data and music)
+// Serves the game folder through an app:// protocol (so fetch() works for chapter data and music)
 // and opens one fullscreen game window.
 const { app, BrowserWindow, protocol, net, Menu } = require('electron');
 const fs = require('fs');
@@ -12,15 +12,15 @@ app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 // When no system voices exist, the game falls back to the bundled meSpeak engine.
 if (process.platform === 'linux') app.commandLine.appendSwitch('enable-speech-dispatcher');
 
-// Packaged builds carry the game in ./web; during development it lives in ../build/web.
+// Packaged builds carry the game in ./web; during development it is the repository's game folder.
 const packaged = path.join(__dirname, 'web');
-const root = fs.existsSync(packaged) ? packaged : path.join(__dirname, '..', 'build', 'web');
+const root = fs.existsSync(packaged) ? packaged : path.join(__dirname, '..', 'game');
 
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280, height: 800, minWidth: 660, minHeight: 420, fullscreen: true,
     backgroundColor: '#000000', title: 'Rhythm Runner', autoHideMenuBar: true,
-    icon: path.join(root, 'icon.png'),
+    icon: path.join(__dirname, 'build', 'icon.png'),
     webPreferences: { contextIsolation: true, sandbox: true },
   });
   win.webContents.on('before-input-event', (e, input) => {
@@ -34,7 +34,7 @@ app.whenReady().then(() => {
   protocol.handle('app', (req) => {
     const rel = decodeURIComponent(new URL(req.url).pathname).replace(/^\/+/, '') || 'index.html';
     const file = path.normalize(path.join(root, rel));
-    if (!file.startsWith(root)) return new Response('Not found', { status: 404 });
+    if (!file.startsWith(root + path.sep)) return new Response('Not found', { status: 404 });
     return net.fetch(pathToFileURL(file).toString());
   });
   Menu.setApplicationMenu(null);
