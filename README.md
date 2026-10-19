@@ -33,10 +33,12 @@ The game starts in fullscreen; F11 or Alt+Enter toggles it.
 | Q | Kick your rival back (after a 12-hit streak) |
 | P | Pause |
 | Up / Down (map) | Audio offset calibration |
+| N (map) | No-fail mode on or off |
 | C / J / S (map) | Outfits, jukebox, story comic |
 | Esc (map) | Back to the title screen |
 
 Hit enemies on the beat. Misses drain the groove meter; a full meter plus a 30 combo starts Fever (double score).
+Enemies marked x3 split into three when hit; letting one through counts as three misses. In the rival race, the rival's kick costs groove but keeps your combo.
 Each chapter has five stages: an intro stage, a rival race, a mini boss, a duet with a random hero from another chapter, and a boss fight.
 
 ## Chapters

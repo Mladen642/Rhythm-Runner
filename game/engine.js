@@ -741,9 +741,12 @@ function dmgScale() { return BOSS_DMG; }
 function loseGroove(n) { n *= dmgScale(); groove = Math.max(0, groove - n); lostAt = songTime(); lastLoss = n; }
 function missed(n) {
   const st = songTime();
-  if (n.k === 'split') for (const c of notes) if (c.child === n.e) c.st = 'skip';
-  if (encoreOn(st)) { combo = 0; return; }
-  stats[sidx(n)].M++; combo = 0; loseGroove(2); judgeTxt = { g: 'M', t: st };
+  // A splitter (x3) that gets past counts as all three parts missed, so letting it through is never the safe choice.
+  const kids = n.k === 'split' ? notes.filter(c => c.child === n.e && c.st === 'p') : [];
+  if (encoreOn(st)) { for (const c of kids) c.st = 'skip'; combo = 0; return; }
+  for (const c of kids) c.st = 'x';
+  const parts = 1 + kids.length;
+  stats[sidx(n)].M += parts; combo = 0; loseGroove(2 * parts); judgeTxt = { g: 'M', t: st };
   heroStumbleAt = st; recentMiss.push(st); if (fever.on) endFever();
   if (n.k === 'shot') { loseGroove(1); shake(0.5, 5); bigBoom(); fx.push({ k: 'burst', word: 'OUCH!', x: CH.hero.x + 6, y: GY - 30, t0: st, big: true }); }
   if (mOn('jam', st)) MX.jam = 0;
@@ -1387,7 +1390,8 @@ function rivalUpdate(st) {
   if (rival.state === 'idle' && st >= rival.next - 0.9 && st < w[1] - 3 && !(qte && qte.phase !== 'done') && !buddyRun) { rival.state = 'wind'; rival.kickT = rival.next; }
   if (rival.state === 'wind' && st >= rival.kickT) {
     rival.state = 'recover'; rival.hitAt = st; rival.next = st + 9.5; if (rival.yoinkNext < st + 3.5) rival.yoinkNext = st + 4; if (rival.snatchNext < st + 3) rival.snatchNext = st + 3.5;
-    loseGroove(2); combo = 0; rival.adj += 1500; shake(0.55, 5); heroStumbleAt = st; boom();
+    // The kick costs groove and gives the rival a lead, but leaves the combo alone; Q needs 12 more hits from here.
+    loseGroove(2); kbBase = combo; rival.adj += 1500; shake(0.55, 5); heroStumbleAt = st; boom();
     fx.push({ k: 'burst', word: 'WHAM!', x: CH.hero.x + 6, y: GY - 30, t0: st, big: true });
     { const rl = P(CH.rivalLines.kick); say(rl, CH.rivalLines.pitch, 1.2); taunt = { who: 'rival', txt: U(rl), t: st + 0.3 }; }
   }
