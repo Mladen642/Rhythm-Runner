@@ -1,18 +1,12 @@
 # Releasing
 
 1. Update the version in `desktop/package.json`.
-2. Rebuild the game and the AppImage:
+2. Build the AppImage:
 
    ```bash
-   cd tools && python3 app_build.py && python3 app_start.py
-   cd ../desktop && npm install && npm run dist
+   cd desktop && npm install && npm run dist
    ```
 
-3. Pack the web build:
-
-   ```bash
-   cd ../build && cp -r web rhythm-runner-web && zip -r rhythm-runner-web-<version>.zip rhythm-runner-web && rm -r rhythm-runner-web
-   ```
-
-4. On GitHub, open Releases, choose "Draft a new release", create a tag such as `v<version>`, and attach
-   `desktop/dist/RhythmRunner-<version>-x86_64.AppImage` and `build/rhythm-runner-web-<version>.zip`.
+3. Start `desktop/dist/RhythmRunner-<version>-x86_64.AppImage` once and play a few seconds of a chapter.
+4. On GitHub, open Releases, choose "Draft a new release", create a tag named after the version (such as `0.2.0`, like
+   the existing `0.1.0`), and attach `desktop/dist/RhythmRunner-<version>-x86_64.AppImage`.

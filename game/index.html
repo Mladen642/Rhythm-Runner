@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rhythm Runner</title>
+<style>
+  :root { --bg: #efeaf6; --ink: #3a3550; --soft: #6e6890; box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #0d0a18; --ink: #d8d2f0; --soft: #8f88b3; color-scheme: dark; } }
+  :root[data-theme="dark"] { --bg: #0d0a18; --ink: #d8d2f0; --soft: #8f88b3; color-scheme: dark; }
+  html, body { height: 100%; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; overflow: hidden; }
+  canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; max-width: 100%; cursor: pointer; border-radius: 4px; box-shadow: 0 0 0 2px #1b1030, 0 10px 40px rgba(0,0,0,0.35); outline: none; }
+  #hint { font-size: 12px; color: var(--soft); text-align: center; max-width: 60ch; padding: 0 12px; line-height: 1.5; }
+</style>
+<style id="app-fullscreen">
+  html, body { background: #000 !important; margin: 0; overflow: hidden; }
+  body { gap: 0 !important; padding: 0 !important; justify-content: center; align-items: center; }
+  :root { padding: 0 !important; }
+  #hint { display: none !important; }
+  canvas { box-shadow: none !important; border-radius: 0 !important; flex-shrink: 0; max-width: none !important; }
+</style>
+</head>
+<body>
+<canvas id="c" width="320" height="180" tabindex="0"></canvas>
+<div id="hint">Arrow keys and Enter, or click and tap. Esc goes back, M toggles the music, F11 toggles fullscreen. On a chapter map, Esc returns here.</div>
+<script>
+const DATA = {"font":{"A":[".###.","#...#","#...#","#####","#...#","#...#","#...#"],"B":["####.","#...#","#...#","####.","#...#","#...#","####."],"C":[".###.","#...#","#....","#....","#....","#...#",".###."],"D":["###..","#..#.","#...#","#...#","#...#","#..#.","###.."],"E":["#####","#....","#....","####.","#....","#....","#####"],"F":["#####","#....","#....","####.","#....","#....","#...."],"G":[".###.","#...#","#....","#.###","#...#","#...#",".####"],"H":["#...#","#...#","#...#","#####","#...#","#...#","#...#"],"I":[".###.","..#..","..#..","..#..","..#..","..#..",".###."],"J":["..###","...#.","...#.","...#.","...#.","#..#.",".##.."],"K":["#...#","#..#.","#.#..","##...","#.#..","#..#.","#...#"],"L":["#....","#....","#....","#....","#....","#....","#####"],"M":["#...#","##.##","#.#.#","#.#.#","#...#","#...#","#...#"],"N":["#...#","#...#","##..#","#.#.#","#..##","#...#","#...#"],"O":[".###.","#...#","#...#","#...#","#...#","#...#",".###."],"P":["####.","#...#","#...#","####.","#....","#....","#...."],"Q":[".###.","#...#","#...#","#...#","#.#.#","#..#.",".##.#"],"R":["####.","#...#","#...#","####.","#.#..","#..#.","#...#"],"S":[".####","#....","#....",".###.","....#","....#","####."],"T":["#####","..#..","..#..","..#..","..#..","..#..","..#.."],"U":["#...#","#...#","#...#","#...#","#...#","#...#",".###."],"V":["#...#","#...#","#...#","#...#","#...#",".#.#.","..#.."],"W":["#...#","#...#","#...#","#.#.#","#.#.#","#.#.#",".#.#."],"X":["#...#","#...#",".#.#.","..#..",".#.#.","#...#","#...#"],"Y":["#...#","#...#",".#.#.","..#..","..#..","..#..","..#.."],"Z":["#####","....#","...#.","..#..",".#...","#....","#####"],"0":[".###.","#...#","#..##","#.#.#","##..#","#...#",".###."],"1":["..#..",".##..","..#..","..#..","..#..","..#..",".###."],"2":[".###.","#...#","....#","...#.","..#..",".#...","#####"],"3":["#####","...#.","..#..","...#.","....#","#...#",".###."],"4":["...#.","..##.",".#.#.","#..#.","#####","...#.","...#."],"5":["#####","#....","####.","....#","....#","#...#",".###."],"6":["..##.",".#...","#....","####.","#...#","#...#",".###."],"7":["#####","....#","...#.","..#..",".#...",".#...",".#..."],"8":[".###.","#...#","#...#",".###.","#...#","#...#",".###."],"9":[".###.","#...#","#...#",".####","....#","...#.",".##.."],"!":["..#..","..#..","..#..","..#..","..#..",".....","..#.."],"-":[".....",".....",".....","#####",".....",".....","....."],":":[".....","..#..","..#..",".....","..#..","..#..","....."],".":[".....",".....",".....",".....",".....",".##..",".##.."],"x":[".....",".....","#...#",".#.#.","..#..",".#.#.","#...#"],"[":[".###.",".#...",".#...",".#...",".#...",".#...",".###."],"]":[".###.","...#.","...#.","...#.","...#.","...#.",".###."]," ":[".....",".....",".....",".....",".....",".....","....."],"+":[".....","..#..","..#..","#####","..#..","..#..","....."],",":[".....",".....",".....",".....",".##..","..#..",".#..."],"/":[".....","....#","...#.","..#..",".#...","#....","....."],"@":["..##.","..#.#","..#..","..#..","###..","###..","....."],">":["#....",".#...","..#..","...#.","..#..",".#...","#...."],"<":["....#","...#.","..#..",".#...","..#..","...#.","....#"],"'":["..#..","..#..",".#...",".....",".....",".....","....."],"?":[".###.","#...#","....#","...#.","..#..",".....","..#.."],"=":[".....",".....","#####",".....","#####",".....","....."],"%":["##..#","##..#","...#.","..#..",".#...","#..##","#..##"]},"chapters":[{"num":1,"name":"CONCRETE CITY","genre":"RAP","acc":"#ffd23f","url":"play.html?ch=1","hero":"THE MC","sheet":{"src":"assets/img/6e51398ff4984b5b.png","n":8,"cw":40,"ch":46,"ax":16,"ay":44,"fps":11},"lines":["Mic check, one two!","Let me drop this!","Yo, let us go!","Concrete jungle, here I come!","Beat drop, I am up!","Straight fire!","On beat, all day!","Bars on bars!","Flow is crazy!","Too smooth!","Back on the beat!","Flow restored!"],"buddy":{"kind":"drop","name":"DJ SUBWOOFER","src":"assets/img/ae5aa021ec634068.png","n":4,"cw":34,"ch":36,"ox":17,"oy":35,"says":["DROP THE BASS!","DJ IN THE HOUSE!","TURN IT UP!","BASS CANNON!","HANDS IN THE AIR!","WUB WUB TIME!"]}},{"num":2,"name":"RAVENMOOR","genre":"GOTH","acc":"#b06bff","url":"play.html?ch=2","hero":"GOTH GUITARIST","sheet":{"src":"assets/img/6ead164f05ddd7af.png","n":12,"cw":50,"ch":32,"ax":12,"ay":30,"fps":20},"lines":["Let the night begin.","Into the darkness.","The moon is watching.","Ravenmoor awaits.","Shadows, follow me.","Exquisitely dark!","Gothic perfection!","The bats approve!","Hauntingly good!","Dreadfully divine!","The night embraces me.","Back from the abyss."],"buddy":{"kind":"slash","name":"THE REAPER","src":"assets/img/0d6701b8e172ed3f.png","n":11,"cw":105,"ch":85,"ox":18,"oy":27,"says":["YOUR TIME IS UP.","THE END IS NEAR.","I COME FOR YOU.","SCYTHE TIME.","REST IN PIECES.","TICK TOCK."]}},{"num":3,"name":"NEON CITY","genre":"SYNTHPOP","acc":"#ff4fa3","url":"play.html?ch=3","hero":"NEON SKATER","sheet":{"src":"assets/img/b979fffaa62650af.png","n":20,"cw":36,"ch":38,"ax":6,"ay":35,"fps":25},"lines":["Let's roll!","Skates on, let us go!","Time to glide!","Neon City, here I come!","Watch me shine!","Rolling out!","Totally tubular!","Radical!","So rad!","Like, wow!","Gnarly streak!","Back in the groove!"],"buddy":{"kind":"laser","name":"KEYTAR HERO","src":"assets/img/b21d4a3e9b1de8b9.png","says":["TOTALLY RADICAL!","SYNTH ATTACK!","NEON POWER!","KEYTAR TIME!","FEEL THE SYNTH!","BACK TO THE 80S!"],"o":[53,19]}},{"num":4,"name":"GRAND OPERA","genre":"CLASSICAL","acc":"#ffd23f","url":"play.html?ch=4","hero":"VIVI","sheet":{"src":"assets/img/bcb0185b9d703c33.png","n":8,"cw":44,"ch":46,"ax":16,"ay":44,"fps":11},"lines":["The curtain rises!","Allegro, let us begin!","From the top!","Bows ready!","A grand opening!","Bravo!","Magnificent!","Virtuoso!","Crescendo!","Encore!","Back in harmony!","Bellissimo!"],"buddy":{"kind":"sweep","name":"THE 1812 CANNONS","src":"assets/img/3c3cda633af0b9ec.png","n":4,"cw":96,"ch":36,"ox":20,"oy":35,"says":["FORTISSIMO!","FIRE THE OVERTURE!","FROM THE TOP!","CANNONS, TUTTI!","BRAVISSIMO!","MAESTRO, BOOM!"]}},{"num":5,"name":"DUSTY GULCH","genre":"COUNTRY","acc":"#ff9e3d","url":"play.html?ch=5","hero":"BANJO BELLE","sheet":{"src":"assets/img/dbf826d653e9ca07.png","n":8,"cw":44,"ch":46,"ax":16,"ay":44,"fps":11},"lines":["Yeehaw, let us ride!","Saddle up!","Time to pick some banjo!","Howdy, Dusty Gulch!","Let us kick up some dust!","Yeehaw!","Hot dang!","Pickin and grinnin!","Giddy up!","Rootin tootin!","Back in the saddle!","That is more like it!"],"buddy":{"kind":"sweep","name":"THE STAMPEDE","src":"assets/img/9e8048efba0b9817.png","n":4,"cw":96,"ch":44,"ox":20,"oy":43,"says":["YEEHAW!","STAMPEDE!","GIT ALONG, LITTLE DOGIES!","MOOOOVE IT!","HOLD YER HATS!","RIDE EM, COWBOY!"]}},{"num":6,"name":"VELVET DISTRICT","genre":"JAZZ","acc":"#ffd23f","url":"play.html?ch=6","hero":"SAX CAT","sheet":{"src":"assets/img/4588270fa679afcc.png","n":8,"cw":40,"ch":46,"ax":16,"ay":44,"fps":11},"lines":["Let us swing, baby!","Hit it!","Time to blow!","Dig this groove!","Smooth like butter!","Hot jazz!","Cooking now!","Swinging!","Crazy cool!","Dig it!","Back in the pocket!","Now we are cooking!"],"buddy":{"kind":"sweep","name":"THE BIG BAND","src":"assets/img/55720eafc70bc5a1.png","n":4,"cw":88,"ch":40,"ox":20,"oy":39,"says":["SWING IT!","HIT IT, BOYS!","A-ONE, A-TWO!","BRASS SECTION, GO!","BIG BAND, BIG SOUND!","TAKE IT AWAY!"]}},{"num":7,"name":"BASS PLANET","genre":"EDM","acc":"#5ef2ff","url":"play.html?ch=7","hero":"NOVA","sheet":{"src":"assets/img/076cc39490d953c7.png","n":8,"cw":40,"ch":46,"ax":18,"ay":44,"fps":12},"lines":["System online. Let us drop!","Bass mode: activated!","Plug in, power up!","Ready to rave!","Launching the beat!","Wub wub!","Max frequency!","Drop it!","Overdrive!","Bass boosted!","Sync restored!","Back on the grid!"],"buddy":{"kind":"beam","name":"THE BASS CANNON","src":"assets/img/8429e7ee574cd4d2.png","n":4,"cw":52,"ch":38,"ox":0,"oy":0,"says":["BASS CANNON, FIRE!","DROP THE BEAM!","MAXIMUM WUB!","CHARGING SUBWOOFERS!","FEEL THE BASS!","WOBBLE TIME!"]}},{"num":8,"name":"SUNSET HIGHWAY","genre":"ROCK","acc":"#ff9e3d","url":"play.html?ch=8","hero":"ROCK HERO","sheet":{"src":"assets/img/f69c8fbe8d752eaf.png","n":12,"cw":50,"ch":32,"ax":12,"ay":30,"fps":22},"lines":["Let's rock!","Highway to rock!","Turn it up!","Ready to shred!","Road trip, baby!","Rock and roll!","Shred it!","Face melted!","Heck yeah!","Riff city!","Back on the road!","Now we are rolling!"],"buddy":{"kind":"sweep","name":"THE BIKER","src":"assets/img/c251495008a968d3.png","n":8,"cw":160,"ch":52,"ox":94,"oy":51,"says":["OUTTA MY WAY!","BORN TO RIDE!","HIGHWAY STAR!","FULL THROTTLE!","HOLD MY HELMET!","BRAKES ARE FOR WIMPS!"]}},{"num":9,"name":"STEEL HARBOR","genre":"INDUSTRIAL","acc":"#ff9e3d","url":"play.html?ch=9","hero":"KRAFT","sheet":{"src":"assets/img/9c3d72dbdcbc6a6d.png","n":8,"cw":46,"ch":52,"ax":16,"ay":50,"fps":10},"lines":["Achtung! We begin!","Let the machines play!","Feel the steel!","Ja! Louder!","The harbor awakens!","Wunderbar!","Ja! Ja! Ja!","Stahl!","Kraft!","Precision!","Ja, much better!","Like clockwork!"],"buddy":{"kind":"beam","name":"DER PYROTECHNIKER","src":"assets/img/9c35b81dc0c6f09b.png","n":4,"cw":44,"ch":38,"ox":0,"oy":0,"says":["FEUER FREI!","MORE FIRE!","IT IS GETTING HOT!","BURN IT DOWN!","FLAMES ON!","ACHTUNG, HOT!"],"cols":["#ff3b3b","#ff9e3d","#ffe066","#ffffff"]}},{"num":10,"name":"MOLTEN KEEP","genre":"METAL","acc":"#ff3b3b","url":"play.html?ch=10","hero":"IRON DWARF","sheet":{"src":"assets/img/6465ee15978a5b11.png","n":8,"cw":30,"ch":26,"ax":6,"ay":24,"fps":20},"lines":["For the forge!","Steel and stone!","Let the hammer sing!","To battle!","Dwarves never quit!","Hammer time!","Strike while it is hot!","By my beard!","Unbreakable!","Forged in fire!","Steel yourself!","The forge burns again!"],"buddy":{"kind":"sweep","name":"THE BOAR KING","src":"assets/img/f82f98cbc41a407e.png","n":6,"cw":121,"ch":64,"ox":45,"oy":63,"says":["FOR THE FORGE!","OINK OF DOOM!","THE KING CHARGES!","SNOUT FIRST!","HOG RUSH!","ALL HAIL THE HOG!"]}},{"num":11,"name":"SKY CITADEL","genre":"POWER METAL","acc":"#ffd23f","url":"play.html?ch=11","hero":"STEEL BARD","sheet":{"src":"assets/img/0f0dc187c42a5b26.png","n":12,"cw":54,"ch":34,"ax":14,"ay":32,"fps":24},"lines":["For glory!","To the citadel!","Steel and thunder!","Ride the wind!","The sky awaits!","Epic!","Legendary riff!","For the kingdom!","Unstoppable steel!","Power overwhelming!","Glory returns!","Back in the saga!"],"buddy":{"kind":"sweep","name":"THE HEADBANGERS","src":"assets/img/89632ed028e07b14.png","n":8,"cw":104,"ch":38,"ox":5,"oy":38,"says":["HEADBANG!!!","NECKS OF STEEL!","HAIR OF FURY!","MOSH PIT ASSEMBLE!","WINDMILL TIME!","FOR THE HORDE!"]}},{"num":12,"name":"RIOT STREET","genre":"PUNK","acc":"#7cf06a","url":"play.html?ch=12","hero":"SPIKE","sheet":{"src":"assets/img/0d20287de117317e.png","n":8,"cw":44,"ch":50,"ax":16,"ay":48,"fps":13},"lines":["Oi! Let us go!","One two three four!","Make some noise!","Riot time!","Turn it up to loud!","Oi!","Loud and fast!","No rules!","Total chaos!","Mosh it!","Back in the pit!","Loud again!"],"buddy":{"kind":"sweep","name":"THE CART CREW","src":"assets/img/2e757b7a8b55ecaa.png","n":4,"cw":60,"ch":48,"ox":10,"oy":47,"says":["OI OI OI!","CART ATTACK!","NO RULES!","MOSH IN MOTION!","GET IN, LOSER!","PUNKS NOT DEAD!"]}}],"ambs":[{"name":"RAVENMOOR","layers":[{"type":"static","src":"assets/img/9dd711828c501e40.png","y":0},{"type":"scroll","src":"assets/img/0fdd293b6e065b47.png","y":36,"speed":40},{"type":"scroll","src":"assets/img/b1805caf55e98e50.png","y":62,"speed":12},{"type":"scroll","src":"assets/img/04b913f111fc9b95.png","y":128,"speed":50},{"type":"scroll","src":"assets/img/ce67ceb886a5909d.png","y":114,"speed":25},{"type":"scroll","src":"assets/img/abf84e15e5e37f1c.png","y":118,"speed":12}]},{"name":"NEON CITY","layers":[{"type":"static","src":"assets/img/71a7660e777dadcd.png","y":0},{"type":"scroll","src":"assets/img/0cb346734fd5b90a.png","y":30,"speed":8},{"type":"scroll","src":"assets/img/832d7f5d82a7afb4.png","y":94,"speed":15},{"type":"scroll","src":"assets/img/5c139493e24c5665.png","y":42,"speed":15},{"type":"scroll","src":"assets/img/ffd8d082d2f835e6.png","y":44,"speed":70},{"type":"frames","src":"assets/img/89b4acb1a2499664.png","y":126}]},{"name":"BASS PLANET","layers":[{"type":"static","src":"assets/img/196630e5f8f5e637.png","y":0},{"type":"scroll","src":"assets/img/a86d90ee0f7da185.png","y":126,"speed":60}]},{"name":"SUNSET HIGHWAY","layers":[{"type":"static","src":"assets/img/b6e6d999a7a7d6d2.png","y":0},{"type":"scroll","src":"assets/img/e7af752041d45209.png","y":28,"speed":6},{"type":"scroll","src":"assets/img/e939367e1c1cff25.png","y":28,"speed":20},{"type":"scroll","src":"assets/img/50587242a483a5b6.png","y":82,"speed":25},{"type":"scroll","src":"assets/img/ed9464c31968dfb6.png","y":132,"speed":50},{"type":"scroll","src":"assets/img/0c5b77dda03887de.png","y":156,"speed":85}]},{"name":"STEEL HARBOR","layers":[{"type":"static","src":"assets/img/1ec3a65c4fbbf982.png","y":0},{"type":"scroll","src":"assets/img/3cd4eb95fcee0549.png","y":104,"speed":50},{"type":"scroll","src":"assets/img/e7db23a684eade23.png","y":126,"speed":50}]}]};
+const MUSIC = 'assets/audio/ch_title.mp3';
+const cv = document.getElementById('c'), g = cv.getContext('2d');
+g.imageSmoothingEnabled = false;
+const W = 320, H = 180, GY = 166, K = '#1b1030', F = DATA.font, CHS = DATA.chapters;
+const LC = ['#5ef2ff', '#ff4fa3', '#ffe066'];
+function fit() {
+  const hint = document.getElementById('hint');
+  const s = Math.max(0.5, Math.min(window.innerWidth / W, window.innerHeight / H));
+  cv.style.width = Math.floor(W * s) + 'px'; cv.style.height = Math.floor(H * s) + 'px'; fit.w = innerWidth; fit.h = innerHeight;
+}
+window.addEventListener('resize', fit); fit(); setInterval(() => { if (innerWidth !== fit.w || innerHeight !== fit.h) fit(); }, 300);
+
+// ---------- images ----------
+function img(src) { const im = new Image(); im.src = src; return im; }
+for (const c of CHS) { c.sheet.img = img(c.sheet.src); c.buddy.img = img(c.buddy.src); }
+const AMBI = /amb=(\d)/.test(location.hash) ? +location.hash.match(/amb=(\d)/)[1] % DATA.ambs.length : Math.floor(Math.random() * DATA.ambs.length);
+const AMB = DATA.ambs[AMBI];
+for (const L of AMB.layers) L.img = img(L.src);
+
+// ---------- pixel drawing ----------
+function R(x, y, w, h, c) { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), w, h); }
+function tw(s, sc = 1) { return (s.length * 6 - 1) * sc; }
+function text(s, x, y, col, sc = 1, sh = K) {
+  const layers = sh ? [[sh, sc], [col, 0]] : [[col, 0]];
+  for (const [c, o] of layers) {
+    g.fillStyle = c;
+    for (let i = 0; i < s.length; i++) {
+      const gl = F[s[i]] || F[s[i].toUpperCase()];
+      if (!gl) continue;
+      for (let r = 0; r < 7; r++) { const row = gl[r]; for (let k = 0; k < 5; k++) if (row[k] === '#') g.fillRect(Math.round(x + (i * 6 + k) * sc + o), Math.round(y + r * sc + o), sc, sc); }
+    }
+  }
+}
+function ctext(s, cx, y, col, sc = 1, sh = K) { text(s, cx - Math.floor(tw(s, sc) / 2), y, col, sc, sh); }
+function box(x, y, w, h, fill, edge = K) { R(x, y, w, h, edge); R(x + 1, y + 1, w - 2, h - 2, fill); }
+function rnd(a) { return a[Math.floor(Math.random() * a.length)]; }
+function U(s) { return s.toUpperCase().replace(/[’']/g, '').replace(/[^A-Z0-9 !?.,:+\-]/g, ''); }
+
+// ---------- sound ----------
+let actx = null, musicGain = null, musicOn = true, musicStarted = false;
+function audio() {
+  if (!actx) { actx = new (window.AudioContext || window.webkitAudioContext)(); musicGain = actx.createGain(); musicGain.gain.value = 0.55; musicGain.connect(actx.destination); }
+  if (actx.state === 'suspended') actx.resume();
+  return actx;
+}
+function blip(f = 660, d = 0.06, type = 'square', vol = 0.06, f2 = null) {
+  const a = audio(), o = a.createOscillator(), v = a.createGain(), t = a.currentTime;
+  o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
+  v.gain.setValueAtTime(vol, t); v.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(v); v.connect(a.destination); o.start(t); o.stop(t + d + 0.02);
+}
+function selectSfx() { blip(523, 0.07); setTimeout(() => blip(784, 0.09), 60); setTimeout(() => blip(1046, 0.12), 120); }
+function startMusic() {
+  if (musicStarted) return; musicStarted = true;
+  const a = audio();
+  fetch(MUSIC).then(r => r.arrayBuffer()).then(b => a.decodeAudioData(b)).then(buf => {
+    const src = a.createBufferSource(); src.buffer = buf; src.loop = true; src.connect(musicGain); src.start();
+  }).catch(() => {});
+}
+function setMusic(on) { musicOn = on; if (musicGain) musicGain.gain.setTargetAtTime(on ? 0.55 : 0, audio().currentTime, 0.05); }
+
+// ---------- living background ----------
+const BANTER = ['RACE YOU!', 'COMING THROUGH!', 'FEEL THE BEAT!', 'WHICH WAY TO THE STAGE?', 'IS THIS THE BOSS LEVEL?', 'NICE MOVES!', 'LOUDER!', 'ONE MORE SONG!', 'WAIT FOR ME!', 'WHO STOLE MY PICK?'];
+let actors = [], nextHero = 0.6, nextBuddy = 4, nextEvent = 12, T = 0;
+function spawnHero(opt = {}) {
+  const c = opt.c || rnd(CHS), dir = opt.dir || (Math.random() < 0.7 ? 1 : -1), zoom = opt.zoom ?? Math.random() < 0.3;
+  const sp = (zoom ? 190 + Math.random() * 80 : 70 + Math.random() * 45) * (opt.speedK || 1);
+  actors.push({ k: 'hero', c, dir, sp, x: dir > 0 ? -40 - (opt.lag || 0) : W + 40 + (opt.lag || 0), zoom, big: !!opt.big, say: null, sayAt: 0.4 + Math.random() * 1.6, line: opt.line, ph: Math.random() * 10 });
+}
+function spawnBuddy() {
+  const c = rnd(CHS), b = c.buddy, dir = 1;
+  const air = b.kind === 'laser' || b.kind === 'beam' || b.kind === 'slash';
+  actors.push({ k: 'buddy', c, b, dir, air, sp: b.kind === 'sweep' ? 130 : 95, x: -((b.cw || 60) + 10), say: null, sayAt: 0.8 + Math.random() * 0.8, ph: Math.random() * 10 });
+}
+function event() {
+  const r = Math.random();
+  if (r < 0.4) { const cs = [...CHS].sort(() => Math.random() - 0.5).slice(0, 3 + Math.floor(Math.random() * 2)); cs.forEach((c, i) => spawnHero({ c, dir: 1, zoom: false, speedK: 1.25, lag: i * 26, line: i === cs.length - 1 ? 'WAIT FOR ME!' : null })); }
+  else if (r < 0.7) spawnHero({ big: true, zoom: true, dir: Math.random() < 0.5 ? 1 : -1, speedK: 1.5 });
+  else { const c = rnd(CHS); spawnHero({ c, dir: 1, zoom: true, line: 'CATCH ME!' }); spawnHero({ c: rnd(CHS.filter(x => x !== c)), dir: 1, zoom: true, lag: 40, line: 'GET BACK HERE!' }); }
+}
+function bubble(s, cx, by, col = K) {
+  const w = tw(s) + 6, x = Math.max(2, Math.min(W - w - 2, Math.round(cx - w / 2))), y = Math.max(2, by - 11);
+  R(x - 1, y - 1, w + 2, 12, K); R(x, y, w, 10, '#ffffff'); R(Math.round(cx) - 1, y + 10, 3, 2, '#ffffff'); R(Math.round(cx) - 1, y + 12, 1, 1, K);
+  text(s, x + 3, y + 2, col, 1, null);
+}
+function drawSheet(im, f, cw, ch, x, y, flip, sc = 1) {
+  if (!im.complete || !im.naturalWidth) return;
+  g.save(); g.translate(Math.round(x), Math.round(y));
+  if (flip) g.scale(-1, 1);
+  g.drawImage(im, f * cw, 0, cw, ch, flip ? -cw * sc : 0, 0, cw * sc, ch * sc);
+  g.restore();
+}
+function updateActors(dt) {
+  nextHero -= dt; nextBuddy -= dt; nextEvent -= dt;
+  if (nextHero <= 0) { spawnHero(); nextHero = 1.1 + Math.random() * 1.8; }
+  if (nextBuddy <= 0) { spawnBuddy(); nextBuddy = 5 + Math.random() * 4; }
+  if (nextEvent <= 0) { event(); nextEvent = 10 + Math.random() * 8; }
+  for (const a of actors) {
+    a.x += a.dir * a.sp * dt; a.t = (a.t || 0) + dt;
+    if (!a.say && a.t > a.sayAt && a.x > 30 && a.x < W - 30 && !a.big) {
+      const pool = a.k === 'hero' ? (Math.random() < 0.25 ? BANTER : a.c.lines) : (a.b.says || [a.b.name]);
+      a.say = U(a.line || rnd(pool)).slice(0, 34); a.sayT = a.t;
+    }
+  }
+  actors = actors.filter(a => a.x > -260 && a.x < W + 260);
+}
+function drawLayers(t) {
+  for (const L of AMB.layers) {
+    const im = L.img; if (!im.complete || !im.naturalWidth) continue;
+    if (L.type === 'static' || !L.speed) { g.drawImage(im, 0, L.y); continue; }
+    const w = im.naturalWidth, off = -((t * L.speed * 0.7) % w);
+    for (let x = off; x < W; x += w) g.drawImage(im, Math.round(x), L.y);
+  }
+}
+function drawActors(t, big) {
+  for (const a of actors) {
+    if (!!a.big !== big) continue;
+    if (a.k === 'hero') {
+      const s = a.c.sheet, f = Math.floor((t + a.ph) * (a.zoom ? 16 : s.fps || 11)) % s.n, sc = a.big ? 2 : 1;
+      const x = a.x - (a.dir > 0 ? s.ax : s.cw - s.ax) * sc, y = (a.big ? H + 24 : GY) - s.ay * sc;
+      if (a.zoom) for (let k = 1; k < 4; k++) R(a.x - a.dir * (8 + k * 9) * sc, y + (6 + k * 7) * sc, 7 * sc, sc, LC[k - 1]);
+      drawSheet(s.img, f, s.cw, s.ch, x, y, a.dir < 0, sc);
+      if (a.say && a.t - a.sayT < 2.2) bubble(a.say, a.x, y - 2, K);
+    } else {
+      const b = a.b, im = b.img, n = b.n || 1, cw = b.cw || (im.naturalWidth || 40), ch = b.ch || (im.naturalHeight || 30);
+      const f = Math.floor((t + a.ph) * 10) % n;
+      let y = a.air ? 112 - ch + Math.sin((t + a.ph) * 3) * 5 : GY - (b.oy || ch) - 1;
+      if (b.kind === 'drop') y = GY - ch - Math.abs(Math.sin((t + a.ph) * 6)) * 10;
+      if (b.kind === 'beam' && Math.floor((t + a.ph) * 1.5) % 3 === 0) {
+        const cols = b.cols || ['#b06bff', '#5ef2ff', '#ff4fa3', '#ffffff'];
+        for (let k = 0; k < 40; k += 2) R(a.x + cw + k, y + ch / 2 - 3 + Math.sin(k / 4 + t * 20) * 2, 2, 6, cols[(k / 2 + Math.floor(t * 20)) % cols.length]);
+      }
+      if (b.kind === 'laser') for (let k = 0; k < 5; k++) R(a.x - 6 - k * 7, y + 8 + Math.sin(t * 9 + k) * 4, 3, 1, LC[k % 3]);
+      drawSheet(im, n > 1 ? f : 0, cw, ch, a.x, y, false);
+      if (a.say && a.t - a.sayT < 2.4) bubble(a.say, a.x + cw / 2, y - 2, '#5a2a8e');
+    }
+  }
+}
+
+// ---------- menus ----------
+let screen = 'splash', sel = 0, csel = 0, gsel = 0, hover = -1, flash = null;
+const MENU = [{ id: 'play', t: 'PLAY' }, { id: 'howto', t: 'HOW TO PLAY' }, { id: 'cast', t: 'MEET THE CAST' }, { id: 'sound', t: 'MUSIC' }];
+function menuRects() { return MENU.map((m, i) => ({ x: 105, y: 62 + i * 17, w: 110, h: 14 })); }
+function chapRects() { const r = []; for (let i = 0; i < 12; i++) r.push({ x: 6 + (i % 4) * 78, y: 22 + Math.floor(i / 4) * 27, w: 74, h: 24 }); return r; }
+function castRects() { const r = []; for (let i = 0; i < 12; i++) r.push({ x: 7 + (i % 6) * 51, y: 22 + Math.floor(i / 6) * 58, w: 49, h: 56 }); return r; }
+const BACK = { x: 6, y: 162, w: 44, h: 13 };
+function button(r, label, on, acc = '#ff4fa3', t = 0) {
+  const lift = on ? 1 : 0;
+  R(r.x + 2, r.y + 2, r.w, r.h, 'rgba(0,0,0,0.45)');
+  box(r.x, r.y - lift, r.w, r.h, on ? acc : '#1e1838');
+  R(r.x + 1, r.y + 1 - lift, r.w - 2, 1, on ? '#ffffff' : '#3a3458');
+  if (label) ctext(label, r.x + r.w / 2, r.y + Math.floor((r.h - 7) / 2) - lift, on ? K : '#e8e4ff', 1, on ? null : K);
+  if (on && Math.floor(t * 4) % 2) { text('>', r.x - 9, r.y + Math.floor((r.h - 7) / 2), acc); text('<', r.x + r.w + 4, r.y + Math.floor((r.h - 7) / 2), acc); }
+}
+function logo(t, y, sc) {
+  const s = 'RHYTHM RUNNER', x0 = W / 2 - tw(s, sc) / 2;
+  for (let i = 0; i < s.length; i++) {
+    const dy = Math.round(Math.sin(t * 4 + i * 0.55) * 2), col = s[i] === ' ' ? null : LC[(i + Math.floor(t * 2)) % 3];
+    if (!col) continue;
+    text(s[i], x0 + i * 6 * sc + sc, y + dy + sc, '#5a2a8e', sc, null);
+    text(s[i], x0 + i * 6 * sc, y + dy, col, sc, K);
+  }
+}
+function dim(a = 0.6) { R(0, 0, W, H, 'rgba(10,6,22,' + a + ')'); }
+function starsOf(num) { try { const p = JSON.parse(localStorage.getItem('rr_ch' + num + '_prog') || 'null'); return p && p.stars ? p.stars.reduce((a, b) => a + b, 0) : 0; } catch (e) { return 0; } }
+function starPx(x, y, col) { R(x + 2, y, 1, 1, col); R(x + 1, y + 1, 3, 1, col); R(x, y + 2, 5, 1, col); R(x + 1, y + 3, 3, 1, col); R(x, y + 4, 2, 1, col); R(x + 3, y + 4, 2, 1, col); }
+function openChapter(i) {
+  const c = CHS[i]; selectSfx();
+  flash = { txt: 'LOADING CHAPTER ' + c.num + '...', t: performance.now() / 1000 }; setTimeout(() => { location.href = c.url; }, 260);
+}
+function activate(id) {
+  if (id === 'play') { screen = 'chapters'; selectSfx(); }
+  else if (id === 'howto') { screen = 'howto'; selectSfx(); }
+  else if (id === 'cast') { screen = 'cast'; selectSfx(); }
+  else if (id === 'sound') { setMusic(!musicOn); blip(musicOn ? 880 : 330, 0.1); }
+}
+function back() { if (screen !== 'menu' && screen !== 'splash') { screen = 'menu'; blip(440, 0.08, 'square', 0.06, 220); } }
+
+function drawMenu(t) {
+  logo(t, 14, 3);
+  R(0, 39, W, 13, 'rgba(10,6,22,0.6)'); ctext('12 CHAPTERS - 12 GENRES - ONE GROOVE', W / 2, 42, '#ffe066');
+  menuRects().forEach((r, i) => button(r, MENU[i].id === 'sound' ? 'MUSIC: ' + (musicOn ? 'ON' : 'OFF') : MENU[i].t, i === sel, LC[i % 3] === '#ffe066' ? '#ffd23f' : LC[i % 3], t));
+}
+function drawChapters(t) {
+  dim(0.55); ctext('PICK A CHAPTER', W / 2, 8, '#ffffff');
+  const rs = chapRects();
+  rs.forEach((r, i) => {
+    const c = CHS[i], on = i === csel;
+    button(r, '', on, c.acc, t);
+    ctext('CHAPTER ' + c.num, r.x + r.w / 2, r.y + 4 - (on ? 1 : 0), on ? K : c.acc, 1, on ? null : K);
+    ctext(c.genre, r.x + r.w / 2, r.y + 14 - (on ? 1 : 0), on ? K : '#c9c3e6', 1, on ? null : K);
+    if (starsOf(c.num) >= 15) starPx(r.x + r.w - 8, r.y + 3, on ? K : '#ffd23f');
+  });
+  const c = CHS[csel], y = 106;
+  box(6, y, 308, 52, 'rgba(22,16,44,0.92)');
+  R(7, y + 1, 306, 1, c.acc);
+  const s = c.sheet, f = Math.floor(t * (s.fps || 11)) % s.n;
+  drawSheet(s.img, f, s.cw, s.ch, 30 - s.ax, y + 49 - s.ay, false);
+  text(c.name, 62, y + 7, c.acc); text(c.genre, 62 + tw(c.name) + 8, y + 7, '#8f88b3', 1, null);
+  text('HERO: ' + c.hero, 62, y + 19, '#ffffff', 1, null);
+  text('BUDDY: ' + c.buddy.name, 62, y + 29, '#ffffff', 1, null);
+  text(Math.floor(t * 3) % 2 ? 'ENTER OR CLICK TO PLAY' : '', 62, y + 41, '#7cf06a', 1, null);
+  { const s = starsOf(c.num); starPx(250, y + 7, '#ffd23f'); text(s + '/15', 258, y + 7, '#ffd23f', 1, null); }
+  button(BACK, 'BACK', hover === 99, '#ff4fa3', t);
+}
+function drawCast(t) {
+  dim(0.6); ctext('MEET THE CAST', W / 2, 8, '#ffffff');
+  castRects().forEach((r, i) => {
+    const c = CHS[i], on = i === gsel, s = c.sheet;
+    box(r.x, r.y, r.w, r.h, on ? '#2e2650' : 'rgba(30,24,56,0.9)', on ? c.acc : K);
+    const f = on ? Math.floor(t * (s.fps || 11)) % s.n : 0;
+    drawSheet(s.img, f, s.cw, s.ch, r.x + r.w / 2 - s.ax + 2, r.y + 46 - s.ay, false);
+    const nm = ["THE MC", "GOTH", "SKATER", "VIVI", "BELLE", "SAX CAT", "NOVA", "ROCKER", "KRAFT", "DWARF", "BARD", "SPIKE"][i];
+    ctext(nm, r.x + r.w / 2, r.y + 47, on ? c.acc : '#c9c3e6', 1, K);
+  });
+  const c = CHS[gsel];
+  if (!c._line || c._lt < t - 2.6) { c._line = U(rnd(c.lines)).slice(0, 34); c._lt = t; }
+  const r = castRects()[gsel];
+  bubble(c._line, r.x + r.w / 2, r.y + 2, K);
+  box(56, 140, 258, 18, 'rgba(22,16,44,0.92)');
+  ctext(c.hero + ' - CH ' + c.num + ' ' + c.genre + ' - ' + c.buddy.name, 185, 146, '#ffffff', 1, null);
+  button(BACK, 'BACK', hover === 99, '#ff4fa3', t);
+}
+function drawHowto(t) {
+  dim(0.7); ctext('HOW TO PLAY', W / 2, 8, '#ffffff');
+  box(16, 20, 288, 136, 'rgba(22,16,44,0.94)');
+  const L = [['W', 'HIT THE HIGH LANE', LC[0]], ['E', 'HIT THE MIDDLE LANE', LC[1]], ['R', 'HIT THE GROUND LANE', LC[2]], ['SPACE', 'HIT ALL THREE LANES', '#ffd23f'],
+             ['B', 'CALL YOUR BUDDY WHEN THE METER IS FULL', '#7cf06a'], ['Q', 'KICK YOUR RIVAL BACK AFTER 12 HITS', '#ff9e3d'], ['P', 'PAUSE', '#c9c3e6']];
+  L.forEach(([k, d, c], i) => { const y = 28 + i * 13; box(26, y - 2, 34, 11, c); ctext(k, 43, y, K, 1, null); text(d, 68, y, '#ffffff', 1, null); });
+  text('HIT ON THE BEAT. MISSES DRAIN YOUR GROOVE.', 26, 124, '#ffe066', 1, null);
+  text('FILL THE GROOVE + 30 COMBO FOR FEVER!', 26, 136, '#ff4fa3', 1, null);
+  text('BOSSES BRING 3 RANDOM TRICKS EACH RUN.', 26, 148 - 2, '#5ef2ff', 1, null);
+  button(BACK, 'BACK', hover === 99, '#ff4fa3', t);
+}
+function drawSplash(t) {
+  logo(t, 40, 3);
+  R(0, 67, W, 13, 'rgba(10,6,22,0.6)'); ctext('12 CHAPTERS - 12 GENRES - ONE GROOVE', W / 2, 70, '#ffe066');
+  if (Math.floor(t * 2.5) % 2) { box(88, 92, 144, 15, '#ff4fa3'); ctext('PRESS ENTER OR CLICK', W / 2, 96, K, 1, null); }
+}
+
+// ---------- input ----------
+function rectsFor() { return screen === 'menu' ? menuRects() : screen === 'chapters' ? chapRects() : screen === 'cast' ? castRects() : []; }
+function pos(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height]; }
+function hit(r, x, y) { return x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h; }
+cv.addEventListener('pointermove', e => {
+  const [x, y] = pos(e); hover = -1;
+  if (screen !== 'menu' && screen !== 'splash' && hit(BACK, x, y)) { hover = 99; return; }
+  rectsFor().forEach((r, i) => { if (hit(r, x, y)) { hover = i; if (screen === 'menu' && sel !== i) { sel = i; blip(880, 0.03, 'square', 0.03); } if (screen === 'chapters' && csel !== i) { csel = i; blip(880, 0.03, 'square', 0.03); } if (screen === 'cast' && gsel !== i) { gsel = i; blip(880, 0.03, 'square', 0.03); } } });
+});
+cv.addEventListener('pointerdown', e => {
+  cv.focus(); audio(); startMusic();
+  if (screen === 'splash') { screen = 'menu'; selectSfx(); return; }
+  const [x, y] = pos(e);
+  if (screen !== 'menu' && hit(BACK, x, y)) { back(); return; }
+  rectsFor().forEach((r, i) => {
+    if (!hit(r, x, y)) return;
+    if (screen === 'menu') { sel = i; activate(MENU[i].id); }
+    else if (screen === 'chapters') { csel = i; openChapter(i); }
+    else if (screen === 'cast') { gsel = i; CHS[i]._lt = -9; blip(660, 0.06); }
+  });
+});
+window.addEventListener('keydown', e => {
+  const k = e.key;
+  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Enter'].includes(k)) e.preventDefault();
+  audio(); startMusic();
+  if (k === 'm' || k === 'M') { setMusic(!musicOn); return; }
+  if (screen === 'splash') { if (k === 'Enter' || k === ' ') { screen = 'menu'; selectSfx(); } return; }
+  if (k === 'Escape' || k === 'Backspace') { back(); return; }
+  const mv = () => blip(880, 0.03, 'square', 0.03);
+  if (screen === 'menu') {
+    if (k === 'ArrowUp') { sel = (sel + MENU.length - 1) % MENU.length; mv(); }
+    if (k === 'ArrowDown') { sel = (sel + 1) % MENU.length; mv(); }
+    if (k === 'Enter' || k === ' ') activate(MENU[sel].id);
+  } else if (screen === 'chapters' || screen === 'cast') {
+    const cols = screen === 'chapters' ? 4 : 6; let s = screen === 'chapters' ? csel : gsel;
+    if (k === 'ArrowLeft') s = (s + 11) % 12; if (k === 'ArrowRight') s = (s + 1) % 12;
+    if (k === 'ArrowUp') s = (s - cols + 12) % 12; if (k === 'ArrowDown') s = (s + cols) % 12;
+    if (k.startsWith('Arrow')) mv();
+    if (screen === 'chapters') { csel = s; if (k === 'Enter' || k === ' ') openChapter(csel); }
+    else { if (s !== gsel) CHS[s]._lt = -9; gsel = s; }
+  } else if (screen === 'howto' && (k === 'Enter' || k === ' ')) back();
+});
+
+// ---------- loop ----------
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now; T += dt;
+  updateActors(dt);
+  R(0, 0, W, H, '#0d0a18');
+  drawLayers(T);
+  drawActors(T, false);
+  drawActors(T, true);
+  if (screen === 'splash') drawSplash(T);
+  else if (screen === 'menu') drawMenu(T);
+  if (screen === 'chapters') drawChapters(T);
+  else if (screen === 'cast') drawCast(T);
+  else if (screen === 'howto') drawHowto(T);
+  if (screen === 'splash' || screen === 'menu') { text('TONIGHT: ' + AMB.name, 4, 171, '#c9c3e6'); }
+  if (flash && performance.now() / 1000 - flash.t < 2) { box(80, 80, 160, 18, '#7cf06a'); ctext(flash.txt, W / 2, 86, K, 1, null); }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
